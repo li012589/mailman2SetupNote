@@ -63,9 +63,9 @@ The second to last line `ScriptAlias / /usr/lib/cgi-bin/mailman/listinfo` is opt
 Next create the empty document root _/var/www/lists_ (placeholder), enable the _lists.example.com_ vhost configuration and restart Apache:
 
 ```
-mkdir /var/www/lists
-a2ensite mailman.conf
-/etc/init.d/apache2 restart
+sudo mkdir /var/www/lists
+sudo a2ensite mailman.conf
+sudo /etc/init.d/apache2 restart
 ```
 
 Also, change domain name at _/etc/mailman/mm_cfg.py_ by
@@ -113,3 +113,172 @@ mailman   unix  -       n       n       -       -       pipe
   ${nexthop} ${user}
 ```
 
+## Transports In /etc/postfix/transport
+
+Alternatively, you can use **_mysql_**,  but for simplicity we use the file _/etc/postfix/transport_ instead.
+
+```
+sudo postconf -e 'transport_maps = hash:/etc/postfix/transport'
+```
+
+Open _/etc/postfix/transport_:
+
+```
+sudo emacs /etc/postfix/transport
+```
+
+add this line:
+
+```
+lists.example.com      mailman:
+```
+
+Remember to exchange _lists.example.com_ with your domain name. Then
+
+```
+sudo postmap -v /etc/postfix/transport
+sudo /etc/init.d/postfix restart
+```
+
+## Create the mailman mailing list
+
+Before we can start to use **_Mailman_**, we must create a mailing list called _mailman_; this is obligatory - without it **_Mailman_** won't start:
+
+```
+sudo newlist --urlhost=lists.example.com --emailhost=lists.example.com mailman
+```
+
+In most cases the `—urlhos`t and `—emailhost` switches are not necessary because our vhost is already named _lists.example.com_, and we also have it in _/etc/mailman/mm_cfg.py_ (`DEFAULT_EMAIL_HOST` and `DEFAULT_URL_HOST`), but if you want to go sure that **_Mailman_** uses the correct hostname, use these switches.
+
+In case for mistake, your can remove list as root user:
+
+```
+sudo rmlist <the_list_to_remove>
+```
+
+The followings will be prompted:
+
+```
+Enter the email of the person running the list: <-- specify the list administrator email address, e.g. sales@example.com
+Initial mailman password: <-- mailman_password
+To finish creating your mailing list, you must edit your /etc/aliases (or
+equivalent) file by adding the following lines, and possibly running the
+`newaliases' program:
+
+## mailman mailing list
+mailman:              "|/var/lib/mailman/mail/mailman post mailman"
+mailman-admin:        "|/var/lib/mailman/mail/mailman admin mailman"
+mailman-bounces:      "|/var/lib/mailman/mail/mailman bounces mailman"
+mailman-confirm:      "|/var/lib/mailman/mail/mailman confirm mailman"
+mailman-join:         "|/var/lib/mailman/mail/mailman join mailman"
+mailman-leave:        "|/var/lib/mailman/mail/mailman leave mailman"
+mailman-owner:        "|/var/lib/mailman/mail/mailman owner mailman"
+mailman-request:      "|/var/lib/mailman/mail/mailman request mailman"
+mailman-subscribe:    "|/var/lib/mailman/mail/mailman subscribe mailman"
+mailman-unsubscribe:  "|/var/lib/mailman/mail/mailman unsubscribe mailman"
+
+Hit enter to notify mailman owner... <-- ENTER
+```
+
+Now, as suggested edit _/etc/aliases_
+
+```
+sudo emacs /etc/aliases
+```
+
+add these lines:
+
+```
+## mailman mailing list
+mailman:              "|/var/lib/mailman/mail/mailman post mailman"
+mailman-admin:        "|/var/lib/mailman/mail/mailman admin mailman"
+mailman-bounces:      "|/var/lib/mailman/mail/mailman bounces mailman"
+mailman-confirm:      "|/var/lib/mailman/mail/mailman confirm mailman"
+mailman-join:         "|/var/lib/mailman/mail/mailman join mailman"
+mailman-leave:        "|/var/lib/mailman/mail/mailman leave mailman"
+mailman-owner:        "|/var/lib/mailman/mail/mailman owner mailman"
+mailman-request:      "|/var/lib/mailman/mail/mailman request mailman"
+mailman-subscribe:    "|/var/lib/mailman/mail/mailman subscribe mailman"
+mailman-unsubscribe:  "|/var/lib/mailman/mail/mailman unsubscribe mailman"
+```
+
+Whenever you modify _/etc/aliases_, you need to run
+
+```
+sudo newaliases
+sudo /etc/init.d/postfix restart
+```
+
+Now we can finally start **_Mailman_**:
+
+```
+sudo /etc/init.d/mailman start
+```
+
+Then the **_Mailman_** server is up and running.
+
+Now configure password to create new list on web page:
+
+```
+sudo mmsitepass <mailman_password>
+```
+
+## Web administration
+
+* The admin interface can be reached on _http://lists.example.com/admin/mailman_
+  * you can log in use user name and password specified at creating _mailman_ list
+* New lists can create at _http://lists.example.com/create_
+  * password are created with `mmsitpass` as mentioned above.
+  * notice that owner will receive a email telling you to edit _\etc\aliases_, refer to next section for more detailed instructions.
+* General information about lists hosted can be viewed at both _http://lists.example.com/listinfo_ or just _http://lists.example.com/_ (as configured above at apache2 section)
+
+## Command line administration
+
+To add new lists, run:
+
+```
+newlist --urlhost=lists.example.com --emailhost=lists.example.com <list_name>
+```
+
+The following will be prompted:
+
+```
+Enter the email of the person running the list: <-- onwer's email address
+Initial testlist2 password: <-- onwer's password
+To finish creating your mailing list, you must edit your /etc/aliases (or
+equivalent) file by adding the following lines, and possibly running the
+`newaliases' program:
+
+## testlist2 mailing list
+testlist2:              "|/var/lib/mailman/mail/mailman post <list_name>"
+testlist2-admin:        "|/var/lib/mailman/mail/mailman admin <list_name>"
+testlist2-bounces:      "|/var/lib/mailman/mail/mailman bounces <list_name>"
+testlist2-confirm:      "|/var/lib/mailman/mail/mailman confirm <list_name>"
+testlist2-join:         "|/var/lib/mailman/mail/mailman join <list_name>"
+testlist2-leave:        "|/var/lib/mailman/mail/mailman leave <list_name>"
+testlist2-owner:        "|/var/lib/mailman/mail/mailman owner <list_name>"
+testlist2-request:      "|/var/lib/mailman/mail/mailman request <list_name>"
+testlist2-subscribe:    "|/var/lib/mailman/mail/mailman subscribe <list_name>"
+testlist2-unsubscribe:  "|/var/lib/mailman/mail/mailman unsubscribe <list_name>"
+
+Hit enter to notify testlist2 owner... <-- ENTER
+```
+
+Edit _/etc/aliases_ as instructed
+
+```
+sudo emacs /etc/aliases
+```
+
+add these lines as mentioned above (DON'T copy it here, different from run to run). Then
+
+```
+sudo newaliases
+sudo /etc/init.d/postfix restart
+```
+
+## Reference
+
+1. https://www.howtoforge.com/how-to-install-and-configure-mailman-with-postfix-on-debian-squeeze
+2. https://help.ubuntu.com/community/Mailman
+3. http://www.gnu.org/s/mailman/index.html
