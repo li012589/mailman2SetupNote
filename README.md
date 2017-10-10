@@ -76,6 +76,8 @@ sudo a2ensite mailman.conf
 sudo /etc/init.d/apache2 restart
 ```
 
+**Note**: here we create _**lists**_ folder as placeholder because our domain is _**lists**.example.com_ 
+
 Also, change domain name at _/etc/mailman/mm_cfg.py_ by
 
 ```
