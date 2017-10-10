@@ -8,7 +8,15 @@ In this tutorial, **_apache2 postfix_** and **_mailman_** will be used.
 
 The default web server is **_apache2_**, alternatively nginx is ok. 
 
-` sudo apt install apache2`
+```
+sudo apt install apache2
+```
+
+and then
+
+```
+sudo apt install mailman
+```
 
 You will see the following questions/messages:
 
