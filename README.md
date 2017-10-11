@@ -76,7 +76,27 @@ sudo a2ensite mailman.conf
 sudo /etc/init.d/apache2 restart
 ```
 
-**Note**: here we create _**lists**_ folder as placeholder because our domain is _**lists**.example.com_ 
+**Note:** here we create _**lists**_ folder as placeholder because our domain is _**lists**.example.com_ 
+
+**Also note:** old version of mailman **may not** be compatible with newer apache2, here we use apache2 ver. 2.4.25 and mailman ver. 2.1.23. If get "Access denied" error, edit _/etc/apache2/site-avabile/mailman.conf_ change 
+
+```
+Order allow,deny
+Allow from all
+```
+
+to
+
+```
+Require all granted
+```
+
+**Also note:** sometimes the page will be downloaded instead of opening, just run
+
+```
+a2enmod cgi
+service apache2 restart
+```
 
 Also, change domain name at _/etc/mailman/mm_cfg.py_ by
 
